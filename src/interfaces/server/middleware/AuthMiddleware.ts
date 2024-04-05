@@ -1,35 +1,49 @@
 import * as express from "express";
+import { config } from "dotenv";
+import * as jwt from 'jsonwebtoken';
 import { asyncMiddleware } from "./AsyncMiddleware";
-
 import * as Logger from "../../../utils";
 
-export const parseTokenPayloadMiddleware: express.Handler = asyncMiddleware(async (req, res, next) => {
+config();
+
+const jwtSecretKey = process.env.APP_KEY as string;
+
+const authUsername = process.env.AUTH_USERNAME as string;
+const authPassword = process.env.AUTH_PASSWORD as string;
+
+export const authMiddleware: express.Handler = asyncMiddleware(async (req, res, next) => {
   try {
     if (req.headers.authorization) {
       const [authType, credentials] = (req.headers.authorization as string).split(" ");
 
       switch (authType.toLowerCase()) {
       case "bearer":
-        // do authenticate with server authorization
-
+        try {
+          const tokenVerify   = jwt.verify(credentials, jwtSecretKey);
+          req.body.authUser = tokenVerify;
+          req.body.isLogin  = true;
+          next();
+        } catch (error) {
+          res.status(401).json({ error: 'Invalid token' });
+        }
         break;
       case "basic":
         // Base64 encoded string → decode to ascii
-        const decoded = new Buffer(credentials, "base64").toString("ascii");
+        const decoded = Buffer.from(credentials, "base64").toString("ascii");
         const [username, password] = decoded.split(":");
 
-        if (username && password) {
-          // check username and password is correct
+        // check username and password is correct
+        if (username && password && username == authUsername && password == authPassword) {
+          req.body.isLogin  = true;
+          next();
         } else {
-          // do something
+          res.status(401).json({ error: 'Invalid authentication' });
         }
         break;
       default:
         break;
       }
     }
-
-    next();
   } catch (e) {
     if (e instanceof Error) {
       Logger.instance.error(e.message);
@@ -41,14 +55,4 @@ export const parseTokenPayloadMiddleware: express.Handler = asyncMiddleware(asyn
     }
     res.status(500);
   }
-});
-
-export const authMiddleware: express.Handler = asyncMiddleware(async (req, _, next) => {
-  if (req) {
-    // req.isLogin = true;
-  } else {
-    // req.isLogin = false;
-  }
-
-  next();
 });

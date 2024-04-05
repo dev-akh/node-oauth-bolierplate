@@ -41,6 +41,12 @@ export class User {
       .then(user => user);
   }
 
+  public async passwordByEmail(email: string): Promise<schema.IStoredUser> {
+    return await Repository.instance
+      .getUserPasswordByEmail(email)
+      .then(user => user);
+  }
+
   public async byId(id: string): Promise<schema.IStoredUser> {
     return await Repository.instance.getUserById(id);
   }

@@ -26,6 +26,10 @@ export class MongoRepository implements RepositoryInterface {
   private mapDoc(doc: any) {
     const result = doc ;
 
+    if (result.password) {
+      delete result.password; // Remove the password key from the result object
+    }
+
     if (doc._id && doc._id.toHexString) {
       result._id = doc._id.toHexString();
     }
@@ -97,6 +101,28 @@ export class MongoRepository implements RepositoryInterface {
         Logger.instance.debug({module: 'getUserByEmail', doc});
         if (doc) {
           resolve(this.mapDoc(doc));
+        } else {
+          reject(new NotFoundError('User'));
+        }
+      });
+    } catch (error) {
+      Logger.instance.error('getUserByEmail', error);
+      throw new RepositoryInternalError(error as Error);
+    }
+  }
+
+  /*
+  * Get User Information by Email
+  * @params user Email : string
+  * @return schema.IStoredUser
+  */
+  public async getUserPasswordByEmail(email: string): Promise<schema.IStoredUser> {
+    try {
+      const doc = await this.users.findOne<schema.IStoredUser>({ email: email });
+      return new Promise((resolve, reject) => {
+        Logger.instance.debug({module: 'getUserByEmail', doc});
+        if (doc) {
+          resolve(doc);
         } else {
           reject(new NotFoundError('User'));
         }

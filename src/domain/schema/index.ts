@@ -9,6 +9,7 @@ export interface IWithID {
 
 export interface IUserData {
   email: string;
+  password: string;
   emailVerified: boolean;
   name: string;
   picture: string | null;
