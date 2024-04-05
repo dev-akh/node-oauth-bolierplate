@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import * as express from "express";
-import { parseTokenPayloadMiddleware } from "./middleware/AuthMiddleware";
-import { router } from "./router";
+import { auth, web } from "./routes";
 import { corsMiddleware } from "./middleware/CorsMiddlewere";
+import * as Logger from "../../utils";
+const bodyParser = require("body-parser");
+const expressPinoLogger = require("express-pino-logger");
 const helmet = require("helmet");
 const xss = require("xss-clean");
 
@@ -14,6 +16,13 @@ export function app(corsOrigin: string): express.Application {
     .use(express.urlencoded({ extended: true }))
     .use(xss())
     .use(corsMiddleware(corsOrigin))
-    .use(parseTokenPayloadMiddleware)
-    .use("/", router());
+    .use(
+      expressPinoLogger({
+        logger: Logger.instance,
+      }),
+    )
+    .use(bodyParser.urlencoded({ extended: true }))
+    .use(bodyParser.json())
+    .use(web()) // this is for free middleware
+    .use(auth()); // inside the middleware
 }

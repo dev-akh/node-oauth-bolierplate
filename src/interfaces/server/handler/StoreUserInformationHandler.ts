@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import * as bcrypt from 'bcrypt';
 import { asyncMiddleware } from "../middleware/AsyncMiddleware";
 import * as Logger from "../../../utils/Logger";
 import { StoreUserInformationUsecase } from "../../../application/usecase/StoreUserInformationUsecase";
@@ -13,10 +14,13 @@ import { AlreadyExistUserError } from "../../../application/controller/errors/Al
  * @yields {500} Server error
  */
 const handler = async (req: Request, res: Response) => {
+
+  const storeUserUC = new StoreUserInformationUsecase();
   try {
-    const storeUserUC = new StoreUserInformationUsecase();
+    const hashedPassword = await bcrypt.hash(req.body.password, 10);
     const userInformation: schema.IUserData = {
       email: req.body.email,
+      password: hashedPassword,
       emailVerified: false,
       name: req.body.name,
       picture: req.body.picture,
@@ -30,7 +34,6 @@ const handler = async (req: Request, res: Response) => {
       userRole: 0,
       isBlock: false
     };
-
     const user = await storeUserUC.storeUserInformation(userInformation);
     if (user) {
       res.status(201).json({ success: true, user });

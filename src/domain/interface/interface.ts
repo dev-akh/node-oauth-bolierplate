@@ -11,6 +11,9 @@ export interface RepositoryInterface {
   // get user information by email
   getUserByEmail(email: string): Promise<schema.IStoredUser>;
 
+  // get user information by email
+  getUserPasswordByEmail(email: string): Promise<schema.IStoredUser>;
+
   // store the user information
   storeUserData(payload: schema.IUserData): Promise<string | null>;
 }
